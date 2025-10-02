@@ -5,4 +5,8 @@ export type SiteConfig = {
   links: {
     github: string,
   },
-}
+};
+
+export type TaskListConfig = {
+  defaultTitle: string,
+};
