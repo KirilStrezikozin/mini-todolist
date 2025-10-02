@@ -41,7 +41,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   }, [initTheme]);
 
   return (
-    <div className={cn("flex items-center h-7 w-7 w-max", className)}>
+    <div className={cn("flex items-center h-5 w-5 w-max", className)}>
       <div
         aria-label="Use dark theme"
         aria-hidden="true"

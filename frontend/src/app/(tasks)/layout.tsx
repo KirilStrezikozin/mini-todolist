@@ -30,7 +30,7 @@ export default function TasksLayout({
                 target="_blank"
                 rel="noreferrer"
               >
-                <Github className="h-7 w-7" />
+                <Github className="h-5 w-5" />
                 <span className="sr-only">GitHub</span>
               </Link>
             </nav>
