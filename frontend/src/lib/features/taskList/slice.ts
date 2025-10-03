@@ -24,6 +24,26 @@ export const taskListSlice = createSlice({
     setTasks: (state, action: PayloadAction<Task[]>) => {
       state.tasks = action.payload;
     },
+    moveTaskUp: (state, action: PayloadAction<number>) => {
+      if (action.payload === 0) return;
+      [
+        state.tasks[action.payload],
+        state.tasks[action.payload - 1],
+      ] = [
+          state.tasks[action.payload - 1],
+          state.tasks[action.payload],
+        ];
+    },
+    moveTaskDown: (state, action: PayloadAction<number>) => {
+      if (action.payload === state.tasks.length - 1) return;
+      [
+        state.tasks[action.payload],
+        state.tasks[action.payload + 1],
+      ] = [
+          state.tasks[action.payload + 1],
+          state.tasks[action.payload],
+        ];
+    },
     changeTitle: (state, action: PayloadAction<TaskListState["title"]>) => {
       state.title = action.payload;
     },
