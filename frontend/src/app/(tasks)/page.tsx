@@ -146,11 +146,11 @@ function Task({ index, data, inputRef }: TaskProps) {
           />
         </div>
       </Collapse>
-      <div className="absolute">
-        <Collapse show={show && Boolean(data.name)}>
+      <Collapse show={show && Boolean(data.name)}>
+        <div className="absolute flex left-0 flex-col items-center w-full">
           <TaskToolbar taskIndex={index} inputRef={ref} />
-        </Collapse>
-      </div>
+        </div>
+      </Collapse>
     </>
   );
 
