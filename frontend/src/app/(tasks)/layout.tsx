@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { MainNav } from "@/components/main-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+import StoreProvider from "@/components/store-provider";
+
 export default function TasksLayout({
   children,
 }: Readonly<{
@@ -20,7 +22,7 @@ export default function TasksLayout({
             <MainNav />
           </div>
           <nav className="flex flex-1 justify-between sm:justify-end">
-            <Button className="font-mono" variant="ghost">Login</Button>
+            <Button className="font-sans" variant="ghost">Login</Button>
           </nav>
           <div className="flex items-center">
             <nav>
@@ -39,7 +41,9 @@ export default function TasksLayout({
         </div>
       </header>
       <main className="flex-1">
-        {children}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
       </main>
     </div >
   );
