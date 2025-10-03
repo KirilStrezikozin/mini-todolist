@@ -13,3 +13,7 @@ export type TaskListConfig = {
   defaultTitle: string,
   defaultTask: Omit<Task, "key">,
 };
+
+export type LocalStorageConfig = {
+  taskListKey: string,
+};

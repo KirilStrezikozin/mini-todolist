@@ -18,6 +18,7 @@ export function TaskListTitle() {
             dispatch(changeTitle(e.target.value));
           }
         }}
+        defaultValue={title}
       />
     </div>
   );

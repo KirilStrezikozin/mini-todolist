@@ -5,9 +5,9 @@ import { TaskToolbar } from "@/components/tasklist/task-toolbar";
 import { TextInput } from "@/components/text-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Dispatch, RefObject, SetStateAction, StrictMode, useCallback, useEffect, useRef, useState, FocusEvent } from "react";
+import { RefObject, StrictMode, useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, changeTaskCompleted, changeTaskName, setTasks, taskListSlice } from "@/lib/features/taskList/slice";
+import { addTask, changeTaskCompleted, changeTaskName, getNextTaskKey, load, saveTaskListState, setTasks, taskListSlice } from "@/lib/features/taskList/slice";
 import { type Task } from "@/lib/features/taskList/schema";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -15,6 +15,7 @@ import { taskListConfig } from "@/config/taskList";
 import { selectLastActionType } from "@/lib/store";
 import { Collapse } from "@/components/collapse";
 import { AnimatePresence } from "motion/react";
+import { useMounted } from "@/hooks/use-mounted";
 
 const tasksbackup = [
   {
@@ -124,6 +125,7 @@ function Task({ index, data, inputRef }: TaskProps) {
         )}>
           <div className="flex py-2">
             <Checkbox
+              defaultChecked={data.completed}
               className={data.indentLevel == 0 ? "" : "rounded-lg"}
               onCheckedChange={state => dispatch(
                 changeTaskCompleted({ index: index, completed: state === true ? true : false })
@@ -155,12 +157,15 @@ function Task({ index, data, inputRef }: TaskProps) {
 }
 
 function TaskList() {
-  // TODO: do not init store here.
   const store = useAppStore();
   const initialized = useRef(false);
   if (!initialized.current) {
     initialized.current = true;
-    store.dispatch(setTasks(tasksbackup));
+    store.dispatch(load());
+    store.subscribe(() => {
+      console.log("writing");
+      saveTaskListState(store.getState().taskList);
+    });
   }
 
   const dispatch = useAppDispatch();
@@ -177,7 +182,9 @@ function TaskList() {
     (lastTaskRef.current?.lastChild as Focusable).focus();
   }, [lastActionType])
 
-  return (
+  const mounted = useMounted();
+
+  return mounted ? (
     <StrictMode>
       <AnimatePresence>
         <div className="flex flex-col w-full">
@@ -193,7 +200,7 @@ function TaskList() {
           </div>
           <Collapse
             /* Avoid adding multiple sentinel tasks elements. */
-            show={Boolean(tasks[tasks.length - 1].name)}
+            show={!Boolean(tasks.length) || Boolean(tasks[tasks.length - 1].name)}
             key={1}
             layout
           >
@@ -204,7 +211,7 @@ function TaskList() {
                 dispatch(addTask({
                   ...taskListConfig.defaultTask,
                   /* Guarantee a unique key for each new task element. */
-                  key: tasks[tasks.length - 1].key + 1,
+                  key: getNextTaskKey(tasks),
                 }));
               }}
             >
@@ -214,7 +221,7 @@ function TaskList() {
         </div>
       </AnimatePresence>
     </StrictMode >
-  );
+  ) : null;
 }
 
 export default function Page() {
