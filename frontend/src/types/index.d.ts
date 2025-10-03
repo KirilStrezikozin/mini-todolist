@@ -1,3 +1,5 @@
+import { Task } from "@/lib/features/taskList/schema";
+
 export type SiteConfig = {
   name: string,
   description: string,
@@ -9,4 +11,5 @@ export type SiteConfig = {
 
 export type TaskListConfig = {
   defaultTitle: string,
+  defaultTask: Omit<Task, "key">,
 };
