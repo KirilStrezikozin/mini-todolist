@@ -1,10 +1,11 @@
 "use client"
 
 import { TaskListTitle } from "@/components/tasklist/title";
+import { TaskToolbar } from "@/components/tasklist/task-toolbar";
 import { TextInput } from "@/components/text-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { RefObject, StrictMode, useEffect, useRef } from "react";
+import { Dispatch, RefObject, SetStateAction, StrictMode, useCallback, useEffect, useRef, useState, FocusEvent } from "react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
 import { addTask, changeTaskCompleted, changeTaskName, setTasks, taskListSlice } from "@/lib/features/taskList/slice";
 import { type Task } from "@/lib/features/taskList/schema";
@@ -111,31 +112,44 @@ interface TaskProps {
 function Task({ index, data, inputRef }: TaskProps) {
   const dispatch = useAppDispatch();
 
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [show, setShow] = useState(false);
+
   return (
-    <Collapse key={data.key} layout>
-      <div ref={inputRef} className={cn(
-        "flex has-[[aria-checked=true]]:line-through has-[[aria-checked=true]]:text-muted-foreground transition-all",
-        data.indentLevel == 0 ? "pl-0" : "pl-6",
-      )}>
-        <div className="flex py-2">
-          <Checkbox
-            className={data.indentLevel == 0 ? "" : "rounded-lg"}
-            onCheckedChange={state => dispatch(
-              changeTaskCompleted({ index: index, completed: state === true ? true : false })
-            )}
+    <>
+      <Collapse key={data.key} layout>
+        <div ref={inputRef} className={cn(
+          "flex has-[[aria-checked=true]]:line-through has-[[aria-checked=true]]:text-muted-foreground transition-all",
+          data.indentLevel == 0 ? "pl-0" : "pl-6",
+        )}>
+          <div className="flex py-2">
+            <Checkbox
+              className={data.indentLevel == 0 ? "" : "rounded-lg"}
+              onCheckedChange={state => dispatch(
+                changeTaskCompleted({ index: index, completed: state === true ? true : false })
+              )}
+            />
+          </div>
+          <TextInput
+            inputRef={ref}
+            onFocus={_ => setShow(true)}
+            onBlur={e => {
+              /* Skip updating state in store on no changes to the task name. */
+              if (data.name !== e.target.value || !e.target.value) {
+                dispatch(changeTaskName({ index: index, name: e.target.value }));
+              }
+              setShow(false);
+            }}
+            defaultValue={data.name}
           />
         </div>
-        <TextInput
-          onBlur={e => {
-            /* Skip updating state in store on no changes to the task name. */
-            if (data.name !== e.target.value || !e.target.value) {
-              dispatch(changeTaskName({ index: index, name: e.target.value }));
-            }
-          }}
-          defaultValue={data.name}
-        />
+      </Collapse>
+      <div className="absolute">
+        <Collapse show={show && Boolean(data.name)}>
+          <TaskToolbar taskIndex={index} inputRef={ref} />
+        </Collapse>
       </div>
-    </Collapse>
+    </>
   );
 
 }
@@ -149,11 +163,12 @@ function TaskList() {
     store.dispatch(setTasks(tasksbackup));
   }
 
+  const dispatch = useAppDispatch();
+
   const tasks = useAppSelector(state => state.taskList.tasks);
   const lastActionType = useAppSelector(selectLastActionType);
-  const lastTaskRef = useRef<HTMLDivElement>(null);
 
-  const dispatch = useAppDispatch();
+  const lastTaskRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     /* Focus the text area of the last task once a new one has been added. */
@@ -176,18 +191,20 @@ function TaskList() {
               />
             ))}
           </div>
-          <Collapse key={1} layout>
+          <Collapse
+            /* Avoid adding multiple sentinel tasks elements. */
+            show={Boolean(tasks[tasks.length - 1].name)}
+            key={1}
+            layout
+          >
             <Button
               variant="outline"
-              className="opacity-50 shadow-none border-none bg-transparent dark:bg-transparent h-7 w-full text-muted-foreground text-sm"
+              className="opacity-50 shadow-none border-none bg-transparent dark:bg-transparent h-7 w-full text-muted-foreground text-sm w-full"
               onClick={_ => {
-                const lastTask = tasks[tasks.length - 1];
-                /* Avoid adding multiple sentinel tasks elements. */
-                if (!lastTask.name) return;
                 dispatch(addTask({
                   ...taskListConfig.defaultTask,
                   /* Guarantee a unique key for each new task element. */
-                  key: lastTask.key + 1,
+                  key: tasks[tasks.length - 1].key + 1,
                 }));
               }}
             >
@@ -205,9 +222,7 @@ export default function Page() {
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-start">
         <TaskListTitle />
-        <div className="flex flex-col gap-2 items-start w-full">
-          <TaskList />
-        </div>
+        <TaskList />
       </main>
     </div >
   );
