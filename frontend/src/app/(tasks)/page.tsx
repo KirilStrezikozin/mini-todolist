@@ -1,13 +1,13 @@
 "use client"
 
-import { TaskListTitle } from "@/components/tasklist/title";
+import { TaskListHeader } from "@/components/tasklist/header";
 import { TaskToolbar } from "@/components/tasklist/task-toolbar";
 import { TextInput } from "@/components/text-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { RefObject, StrictMode, useEffect, useRef, useState } from "react";
+import { RefObject, StrictMode, useEffect, useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, changeTaskCompleted, changeTaskName, getNextTaskKey, load, saveTaskListState, setTasks, taskListSlice } from "@/lib/features/taskList/slice";
+import { addTask, changeTaskCompleted, changeTaskName, getNextTaskKey, load, saveTaskListState, taskListSlice } from "@/lib/features/taskList/slice";
 import { type Task } from "@/lib/features/taskList/schema";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -173,6 +173,10 @@ function TaskList() {
   const tasks = useAppSelector(state => state.taskList.tasks);
   const lastActionType = useAppSelector(selectLastActionType);
 
+  const searchFilter = useAppSelector(state => state.taskListFilter.search);
+  const completionFilter = useAppSelector(state => state.taskListFilter.completion);
+  const priorityFilter = useAppSelector(state => state.taskListFilter.priority);
+
   const lastTaskRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -184,20 +188,39 @@ function TaskList() {
 
   const mounted = useMounted();
 
+  const tasksComponent = useMemo(() => {
+    let sortedTasks = tasks;
+    if (priorityFilter !== "none") {
+      sortedTasks = tasks.toSorted((a, b) => {
+        if (priorityFilter === "asc") return a.priority - b.priority;
+        else return b.priority - a.priority;
+      });
+    }
+
+    return (
+      <div key={0} className="flex flex-col w-full">
+        {sortedTasks.map((task, index) => {
+          if (!task.name.includes(searchFilter)) return;
+          else if (completionFilter === "done" && !task.completed) return;
+          else if (completionFilter === "undone" && task.completed) return;
+          return (
+            <Task
+              key={task.key}
+              index={index}
+              data={task}
+              inputRef={index === tasks.length - 1 ? lastTaskRef : null}
+            />
+          );
+        })}
+      </div>
+    );
+  }, [searchFilter, completionFilter, priorityFilter, tasks]);
+
   return mounted ? (
     <StrictMode>
       <AnimatePresence>
         <div className="flex flex-col w-full">
-          <div key={0} className="flex flex-col w-full">
-            {tasks.map((task, index) => (
-              <Task
-                key={task.key}
-                index={index}
-                data={task}
-                inputRef={index === tasks.length - 1 ? lastTaskRef : null}
-              />
-            ))}
-          </div>
+          {tasksComponent}
           <Collapse
             /* Avoid adding multiple sentinel tasks elements. */
             show={!Boolean(tasks.length) || Boolean(tasks[tasks.length - 1].name)}
@@ -206,7 +229,7 @@ function TaskList() {
           >
             <Button
               variant="outline"
-              className="opacity-50 shadow-none border-none bg-transparent dark:bg-transparent h-7 w-full text-muted-foreground text-sm w-full"
+              className="opacity-50 shadow-none border-none bg-transparent dark:bg-transparent h-7 w-full text-muted-foreground hover:opacity-100 text-sm w-full"
               onClick={_ => {
                 dispatch(addTask({
                   ...taskListConfig.defaultTask,
@@ -228,7 +251,7 @@ export default function Page() {
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-start">
-        <TaskListTitle />
+        <TaskListHeader />
         <TaskList />
       </main>
     </div >

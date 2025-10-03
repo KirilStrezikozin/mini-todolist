@@ -8,6 +8,7 @@ import {
 
 import errorReducer from "./features/error/slice";
 import taskListReducer from "./features/taskList/slice";
+import taskListFilterReducer from "./features/taskListFilter/slice";
 import {
   validationMiddleware as taskListValidationMiddleware
 } from "./features/taskList/middleware";
@@ -25,6 +26,7 @@ export const makeStore = () => {
   return configureStore({
     reducer: {
       taskList: taskListReducer,
+      taskListFilter: taskListFilterReducer,
       error: errorReducer,
     },
     middleware: gDM => gDM().concat(
