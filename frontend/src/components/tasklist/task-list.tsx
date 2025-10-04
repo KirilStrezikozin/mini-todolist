@@ -2,7 +2,6 @@
 
 import { StrictMode, useEffect, useMemo, useRef } from "react";
 import { AnimatePresence } from "motion/react";
-import { useMounted } from "@/hooks/use-mounted";
 
 import { taskListConfig } from "@/config/taskList";
 
@@ -17,14 +16,14 @@ import { Plus } from "lucide-react";
 
 export function TaskList() {
   const store = useAppStore();
-  const initialized = useRef(false);
-  if (!initialized.current) {
-    initialized.current = true;
+
+  useEffect(() => {
+    /* Load persisted task list state on mount. */
     store.dispatch(load());
     store.subscribe(() => {
       saveTaskListState(store.getState().taskList);
     });
-  }
+  }, []);
 
   const dispatch = useAppDispatch();
 
@@ -43,8 +42,6 @@ export function TaskList() {
     interface Focusable extends HTMLElement { focus: () => void }
     (lastTaskRef.current?.lastChild as Focusable).focus();
   }, [lastActionType])
-
-  const mounted = useMounted();
 
   const tasksComponent = useMemo(() => {
     let sortedTasks = tasks;
@@ -74,7 +71,7 @@ export function TaskList() {
     );
   }, [searchFilter, completionFilter, priorityFilter, tasks]);
 
-  return mounted ? (
+  return (
     <StrictMode>
       <AnimatePresence>
         <div className="flex flex-col w-full">
@@ -102,5 +99,5 @@ export function TaskList() {
         </div>
       </AnimatePresence>
     </StrictMode >
-  ) : null;
+  );
 }
