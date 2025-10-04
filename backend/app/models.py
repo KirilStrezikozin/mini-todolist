@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import EmailStr
 from sqlmodel import SQLModel, Field, Relationship
@@ -16,9 +16,6 @@ class UserBase(SQLModel):
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=40)
 
-class UserRegister(SQLModel):
-    email: EmailStr = Field(max_length=255)
-    password: str = Field(min_length=8, max_length=40)
 
 # Database model
 class User(UserBase, table=True):
@@ -37,6 +34,7 @@ class UserPublic(UserBase):
 
 # Shared properties
 class TaskListBase(SQLModel):
+    title: str = Field(default="", nullable=False)
     tasks_json: dict = Field(
         sa_column=Column(JSON, nullable=False, default={})
     )
@@ -49,13 +47,14 @@ class TaskListCreate(TaskListBase):
 
 # Properties to receive via API on update
 class TaskListUpdate(TaskListBase):
-    pass
+    updated_at: datetime
 
 
 # Database model
 class TaskList(TaskListBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False, ondelete="CASCADE")
+    # One TaskList per User, hence unique=True.
+    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False, unique=True, ondelete="CASCADE")
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     user: Optional["User"] = Relationship(back_populates="tasklists")
@@ -77,3 +76,13 @@ class UsersPublic(SQLModel):
 class TaskListsPublic(SQLModel):
     data: List[TaskListPublic]
     count: int
+
+
+# Token properties
+class Token(SQLModel):
+    access_token: str
+    refresh_token: str
+
+
+class TokenRefresh(SQLModel):
+    refresh_token: str

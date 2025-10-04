@@ -1,3 +1,5 @@
+import secrets
+
 from pydantic import (
     PostgresDsn,
     computed_field,
@@ -17,11 +19,17 @@ class Settings(BaseSettings):
     PROJECT_NAME: str
     PROJECT_SCHEMA_NAME: str
 
+    SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY_ALGORITHM: str = "HS256"
+
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_DB: str = ""
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
 
     @computed_field  # type: ignore[prop-decorator]
     @property
