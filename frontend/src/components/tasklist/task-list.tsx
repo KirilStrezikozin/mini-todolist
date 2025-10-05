@@ -8,11 +8,10 @@ import { taskListConfig } from "@/config/taskList";
 
 import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, getNextTaskKey, selectIsTaskListDirty, selectTaskList, selectTasks, setIsSyncScheduled, setIsTaskListDirty, setSyncStatus, taskListSlice } from "@/lib/features/taskList/slice";
+import { addTask, getNextTaskKey, selectIsTaskListDirty, selectTaskList, selectTasks, setIsSyncScheduled, setSyncStatus } from "@/lib/features/taskList/slice";
 import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
 import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState, schedulePutTaskListDB } from "@/lib/features/taskList/sync";
 import { selectErrorMessage } from "@/lib/features/error/slice";
-import { selectLastActionType } from "@/lib/store";
 
 import { Task } from "./task";
 import { Collapse } from "../collapse";
@@ -30,17 +29,11 @@ export function TaskList() {
     store.dispatch(setIsSyncScheduled(false));
     store.dispatch(setSyncStatus("idle"));
 
-    const saveAndScheduleSync = () => {
-      //console.log("saveAndScheduleSync");
-      store.dispatch(saveLocalTaskListState());
-      store.dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
-    }
-
-    saveAndScheduleSync();
     return store.subscribe(() => {
       //console.log("subscribe");
       if (!selectIsTaskListDirty(store.getState())) return;
-      saveAndScheduleSync();
+      store.dispatch(saveLocalTaskListState());
+      store.dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
     });
   }, []);
 
@@ -48,7 +41,6 @@ export function TaskList() {
 
   const taskList = useAppSelector(selectTaskList);
   const tasks = useAppSelector(selectTasks);
-  const lastActionType = useAppSelector(selectLastActionType);
 
   const searchFilter = useAppSelector(selectSearchFilter);
   const completionFilter = useAppSelector(selectCompletionFilter);
@@ -59,7 +51,7 @@ export function TaskList() {
   const errorMessage = useAppSelector(selectErrorMessage);
 
   useEffect(() => {
-    toast.error(errorMessage);
+    if (errorMessage) toast.error(errorMessage);
   }, [errorMessage]);
 
   useEffect(() => {

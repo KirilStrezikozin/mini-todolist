@@ -12,7 +12,8 @@ import {
   TaskListStateSchema,
   TaskListUpdateDB
 } from "./schema";
-import { getSession } from "next-auth/react";
+
+import { getSession, signOut } from "next-auth/react";
 
 
 export const schedulePutTaskListDB = (): AppThunk => {
@@ -99,6 +100,12 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
       dispatch(setSyncStatus("idle"));
     };
 
+    const rejectLogout = () => {
+      dispatch(setError("Please relogin"));
+      dispatch(setSyncStatus("idle"));
+      signOut();
+    };
+
     /* Assume that `api`'s interceptor will attach authorization headers. */
     api({ method: "put", url: "tasklist/", data: data })
       .then(({ data }) => {
@@ -118,15 +125,16 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
         }
       })
       .catch((error) => {
-        console.error(error);
-
         if (!error.response) {
           reject();
           return;
         }
 
         const resp = (error.response as AxiosResponse);
-        if (resp.status !== 409) {
+        if (resp.status === 401) {
+          rejectLogout();
+          return;
+        } else if (resp.status !== 409) {
           reject();
           return;
         }
