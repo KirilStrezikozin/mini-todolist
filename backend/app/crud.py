@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from typing import Union
 
@@ -72,7 +72,7 @@ def update_tasklist_if_newer(
 
     tasklist.tasks = new_tasklist_data.tasks
     tasklist.title = new_tasklist_data.title
-    tasklist.updated_at = datetime.utcnow()
+    tasklist.updated_at = datetime.now(timezone.utc)
     session.add(tasklist)
     session.commit()
     session.refresh(tasklist)
