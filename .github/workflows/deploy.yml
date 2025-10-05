@@ -61,10 +61,10 @@ jobs:
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
             echo "Pulling the latest image..."
-            docker-compose pull backend
+            docker-compose -f docker-compose.prod.yml pull backend
 
             echo "Starting containers..."
-            docker-compose up -d
+            docker-compose -f docker-compose.prod.yml up -d
 
             echo "Cleaning up..."
             docker image prune -af || true

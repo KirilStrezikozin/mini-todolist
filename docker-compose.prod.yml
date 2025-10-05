@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRES_PORT=${POSTGRES_PORT?Variable not set}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # networks:
+    #   - mini_todolist
+
+  backend:
+    image: ghcr.io/kirilstrezikozin/mini-todolist/backend:latest
+    container_name: ${PROJECT_NAME}_backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=db
+    ports:
+      - "8000:8000"
+    # networks:
+    #   - mini_todolist
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.2.0
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - .env
+    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    # networks:
+    #   - mini_todolist
+
+volumes:
+  db-data:
+
+# networks:
+#   mini_todolist:
+#     driver: bridge
