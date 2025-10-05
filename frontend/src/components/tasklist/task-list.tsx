@@ -5,9 +5,11 @@ import { AnimatePresence } from "motion/react";
 
 import { taskListConfig } from "@/config/taskList";
 
+import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, getNextTaskKey, load, saveTaskListState, taskListSlice } from "@/lib/features/taskList/slice";
+import { addTask, getNextTaskKey, selectTaskList, selectTasks, setTaskList, taskListSlice } from "@/lib/features/taskList/slice";
 import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
+import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState } from "@/lib/features/taskList/sync";
 import { selectLastActionType } from "@/lib/store";
 
 import { Task } from "./task";
@@ -16,19 +18,22 @@ import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 
 export function TaskList() {
+  const session = useSession();
+
   const store = useAppStore();
 
   useEffect(() => {
     /* Load persisted task list state on mount. */
-    store.dispatch(load());
+    store.dispatch(setTaskList(loadLocalTaskListState()));
     store.subscribe(() => {
-      saveTaskListState(store.getState().taskList);
+      saveLocalTaskListState(store.getState().taskList);
     });
   }, []);
 
   const dispatch = useAppDispatch();
 
-  const tasks = useAppSelector(state => state.taskList.tasks);
+  const taskList = useAppSelector(selectTaskList);
+  const tasks = useAppSelector(selectTasks);
   const lastActionType = useAppSelector(selectLastActionType);
 
   const searchFilter = useAppSelector(selectSearchFilter);
@@ -36,6 +41,20 @@ export function TaskList() {
   const priorityFilter = useAppSelector(selectPriorityFilter);
 
   const lastTaskRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    /* Sync task list with DB when logged-in. */
+    if (session.status === "authenticated") {
+      /* This action will try pushing local task list state to DB first.
+       * In case the local state is outdated, the action will fetch the state
+       * from DB and load it. */
+      dispatch(putTaskListDB({
+        title: taskList.title,
+        updated_at: taskList.updated_at,
+        tasks: taskList.tasks,
+      }));
+    }
+  }, [session])
 
   useEffect(() => {
     /* Focus the text area of the last task once a new one has been added. */

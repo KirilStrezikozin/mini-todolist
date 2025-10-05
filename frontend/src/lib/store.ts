@@ -2,6 +2,7 @@ import {
   Action,
   ActionCreatorWithPayload,
   configureStore,
+  createAsyncThunk,
   Middleware,
   ThunkAction
 } from "@reduxjs/toolkit"
@@ -45,3 +46,8 @@ export type AppThunk<ThunkReturnType = void> = ThunkAction<
   unknown,
   Action
 >;
+
+export const createAppAsyncThunk = createAsyncThunk.withTypes<{
+  state: RootState
+  dispatch: AppDispatch
+}>()

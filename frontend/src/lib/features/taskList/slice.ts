@@ -1,49 +1,24 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Task, TaskSchema } from "./schema";
-import { localStorageConfig } from "@/config/localStorage";
-import * as z from "zod";
-
-export const TaskListStateSchema = z.object({
-  title: z.string(),
-  tasks: z.array(TaskSchema),
-});
-
-export type TaskListState = z.infer<typeof TaskListStateSchema>;
-
-export const loadTaskListState = (): TaskListState | undefined => {
-  try {
-    const state = localStorage.getItem(localStorageConfig.taskListKey);
-    if (!state) return undefined;
-    return TaskListStateSchema.parse(JSON.parse(state));
-  } catch (err) {
-    console.error(err);
-    return undefined;
-  }
-}
-
-export const saveTaskListState = (state: TaskListState | undefined) => {
-  try {
-    localStorage.setItem(localStorageConfig.taskListKey, JSON.stringify(state));
-  } catch (err) {
-    console.error(err);
-  }
-}
+import { Task, TaskListState } from "./schema";
+import { RootState } from "@/lib/store";
+import { dateWithoutTimezone } from "@/lib/utils";
 
 const initialState: TaskListState = {
   title: "",
   tasks: [],
+  updated_at: dateWithoutTimezone(new Date()),
+  syncStatus: "idle",
 };
 
 export const taskListSlice = createSlice({
   name: "taskList",
   initialState,
   reducers: {
-    load: () => {
-      const persistedState = loadTaskListState();
-      console.log("hi");
-      if (!persistedState) return;
-      console.log("hi", persistedState);
-      return persistedState;
+    setTaskList: (_state, action: PayloadAction<TaskListState | undefined>) => {
+      if (action.payload) return action.payload;
+    },
+    setSyncStatus: (state, action: PayloadAction<TaskListState["syncStatus"]>) => {
+      state.syncStatus = action.payload;
     },
     addTask: (state, action: PayloadAction<Task>) => {
       state.tasks.push(action.payload);
@@ -100,11 +75,14 @@ export const getNextTaskKey = (tasks: TaskListState["tasks"]): Task["key"] => {
   return nextKey + 1;
 }
 
+export const selectTaskList = (state: RootState) => state.taskList;
+export const selectSyncStatus = (state: RootState) => state.taskList.syncStatus;
 export const selectTasks = (state: RootState) => state.taskList.tasks;
 export const selectTitle = (state: RootState) => state.taskList.title;
 
 export const {
-  load,
+  setTaskList,
+  setSyncStatus,
   addTask,
   removeTask,
   setTasks,
