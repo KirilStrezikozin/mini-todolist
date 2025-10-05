@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
 import { addTask, getNextTaskKey, selectTaskList, selectTasks, setTaskList, taskListSlice } from "@/lib/features/taskList/slice";
 import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
-import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState } from "@/lib/features/taskList/sync";
+import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState, schedulePutTaskListDB } from "@/lib/features/taskList/sync";
 import { selectLastActionType } from "@/lib/store";
 
 import { Task } from "./task";
@@ -27,6 +27,7 @@ export function TaskList() {
     store.dispatch(setTaskList(loadLocalTaskListState()));
     store.subscribe(() => {
       saveLocalTaskListState(store.getState().taskList);
+      dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
     });
   }, []);
 

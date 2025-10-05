@@ -8,6 +8,7 @@ const initialState: TaskListState = {
   tasks: [],
   updated_at: dateWithoutTimezone(new Date()),
   syncStatus: "idle",
+  syncScheduled: false,
 };
 
 export const taskListSlice = createSlice({
@@ -19,6 +20,9 @@ export const taskListSlice = createSlice({
     },
     setSyncStatus: (state, action: PayloadAction<TaskListState["syncStatus"]>) => {
       state.syncStatus = action.payload;
+    },
+    setIsSyncScheduled: (state, action: PayloadAction<boolean>) => {
+      state.syncScheduled = action.payload;
     },
     addTask: (state, action: PayloadAction<Task>) => {
       state.tasks.push(action.payload);
@@ -77,12 +81,14 @@ export const getNextTaskKey = (tasks: TaskListState["tasks"]): Task["key"] => {
 
 export const selectTaskList = (state: RootState) => state.taskList;
 export const selectSyncStatus = (state: RootState) => state.taskList.syncStatus;
+export const selectIsSyncScheduled = (state: RootState) => state.taskList.syncScheduled;
 export const selectTasks = (state: RootState) => state.taskList.tasks;
 export const selectTitle = (state: RootState) => state.taskList.title;
 
 export const {
   setTaskList,
   setSyncStatus,
+  setIsSyncScheduled,
   addTask,
   removeTask,
   setTasks,

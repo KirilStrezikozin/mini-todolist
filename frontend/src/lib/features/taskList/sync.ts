@@ -4,7 +4,7 @@ import { AxiosResponse } from "axios";
 import { localStorageConfig } from "@/config/localStorage";
 import { AppThunk } from "@/lib/store";
 import { setError } from "../error/slice";
-import { selectSyncStatus, setSyncStatus, setTaskList } from "./slice";
+import { selectIsSyncScheduled, selectSyncStatus, setIsSyncScheduled, setSyncStatus, setTaskList } from "./slice";
 
 import {
   TaskListPublicDBSchema,
@@ -13,9 +13,36 @@ import {
   TaskListUpdateDB
 } from "./schema";
 
-// TODO: create an async thunk that is triggered on state change.
-// It either quits immediately if there is one already in flight, or marks itself in flight, waits for a delay (10s),
-// then computes updated_at, puts state into DB, then dispatches updated_at change.
+
+export const schedulePutTaskListDB = (): AppThunk => {
+  return (dispatch, getState) => {
+    if (selectIsSyncScheduled(getState())) return; /* Allow a single scheduled sync in flight. */
+
+    dispatch(setIsSyncScheduled(true));
+
+    const delay = (Number(process.env.TASKLIST_SYNC_FREQUENCY_SECONDS) || 10) * 1000;
+    const sync = () => {
+      const state = getState();
+
+      const syncStatus = selectSyncStatus(state);
+      if (syncStatus !== "idle") {
+        /* Try again after delay if there is a sync operation currently in flight. */
+        setTimeout(sync, delay);
+        return;
+      }
+
+      dispatch(putTaskListDB({
+        title: state.taskList.title,
+        updated_at: state.taskList.updated_at,
+        tasks: state.taskList.tasks,
+      }));
+
+      dispatch(setIsSyncScheduled(false));
+    }
+
+    setTimeout(sync, delay);
+  };
+}
 
 export const fetchTaskListDB = (): AppThunk => {
   return (dispatch, getState) => {
@@ -35,6 +62,7 @@ export const fetchTaskListDB = (): AppThunk => {
         try {
           const taskListDB = TaskListPublicDBSchema.parse(JSON.parse(data));
           const newState = TaskListStateSchema.decode({
+            ...getState().taskList, /* Propagate unmodified props. */
             ...taskListDB,
             syncStatus: "idle",
           });
@@ -66,10 +94,10 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
     api({ method: "put", url: "tasklist", data: data })
       .then(({ data }) => {
         try {
-          /* The returned task list data has the new updated_at value. */
           const taskListDB = TaskListPublicDBSchema.parse(JSON.parse(data));
           const newState = TaskListStateSchema.decode({
-            ...taskListDB,
+            ...getState().taskList, /* Propagate unmodified props. */
+            ...taskListDB, /* Response data has the new updated_at value. */
             syncStatus: "idle",
           });
 

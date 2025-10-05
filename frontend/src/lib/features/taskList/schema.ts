@@ -18,6 +18,7 @@ export const TaskListStateSchema = z.object({
   updated_at: z.iso.datetime({ local: true }), /* timezone-naive. */
   tasks: z.array(TaskSchema),
   syncStatus: z.literal(["idle", "pulling", "pushing"]),
+  syncScheduled: z.boolean(),
 });
 
 export type TaskListState = z.infer<typeof TaskListStateSchema>;
