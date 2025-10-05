@@ -32,8 +32,8 @@ export default function Page() {
             {session.status !== "loading" &&
               <Button
                 className="font-sans" variant="ghost"
-                onClick={() => {
-                  if (session.status === "authenticated") signOut();
+                onClick={async () => {
+                  if (session.status === "authenticated") await signOut();
                   else router.push("/login");
                 }}
               >

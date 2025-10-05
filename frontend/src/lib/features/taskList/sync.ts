@@ -16,12 +16,14 @@ import { getSession } from "next-auth/react";
 
 
 export const schedulePutTaskListDB = (): AppThunk => {
-  return (dispatch, getState) => {
-    getSession().then(session => {
+  return async (dispatch, getState) => {
+    await getSession().then(session => {
       if (!session?.user) return; /* Skip synchronization if not logged in. */
 
       if (selectIsSyncScheduled(getState())) return; /* Allow a single scheduled sync in flight. */
       dispatch(setIsSyncScheduled(true));
+
+      //console.log("scheduled");
 
       const delay = (Number(process.env.TASKLIST_SYNC_FREQUENCY_SECONDS) || 10) * 1000;
       const sync = () => {
@@ -34,6 +36,7 @@ export const schedulePutTaskListDB = (): AppThunk => {
           return;
         }
 
+        //console.log("sent");
         dispatch(putTaskListDB({
           title: state.taskList.title,
           updated_at: state.taskList.updated_at,
@@ -71,6 +74,7 @@ export const fetchTaskListDB = (): AppThunk => {
             syncStatus: "idle",
           });
 
+          //console.log("replace with", newState);
           dispatch(setTaskList(newState));
           dispatch(saveLocalTaskListState(newState));
         } catch (error) {

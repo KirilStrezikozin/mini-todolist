@@ -16,14 +16,17 @@ export default function LoginTip() {
 
   return showLoginTip ? (
     <button
-      className="flex group justify-center items-center align-center w-full p-8 space-x-2"
+      className="flex flex-col sm:flex-row group justify-center items-center align-center w-full p-8 focus:outline-none"
       onClick={() => setShowLoginTip(false)}
     >
-      <Info className="h-6 w-6 sm:h-4 sm:w-4 stroke-gray-500" />
-      <span className="text-sm text-muted-foreground text-center">
+      <Info className="h-4 w-4 stroke-gray-500" />
+      <span className="text-sm text-muted-foreground text-center p-2">
         Login to synchronize to-dos between devices
       </span>
-      <div className="invisible group-hover:visible p-2">
+      <span className="block sm:hidden text-sm text-muted-foreground text-center p-2">
+        Click to hide
+      </span>
+      <div className="hidden sm:block sm:invisible group-hover:visible group-focus:visible p-2">
         <X className="h-4 w-4 stroke-gray-500 stroke-2" />
       </div>
     </button>

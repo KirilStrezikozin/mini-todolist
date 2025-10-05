@@ -31,12 +31,14 @@ export function TaskList() {
     store.dispatch(setSyncStatus("idle"));
 
     const saveAndScheduleSync = () => {
+      //console.log("saveAndScheduleSync");
       store.dispatch(saveLocalTaskListState());
       store.dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
     }
 
     saveAndScheduleSync();
     return store.subscribe(() => {
+      //console.log("subscribe");
       if (!selectIsTaskListDirty(store.getState())) return;
       saveAndScheduleSync();
     });
