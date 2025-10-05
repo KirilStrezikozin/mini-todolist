@@ -29,15 +29,16 @@ export default function Page() {
             <MainNav />
           </div>
           <nav className="flex flex-1 justify-between sm:justify-end">
-            <Button
-              className="font-sans" variant="ghost"
-              onClick={() => {
-                if (session.status === "authenticated") signOut();
-                else router.push("/login");
-              }}
-            >
-              {session.status === "authenticated" ? "Logout" : "Login"}
-            </Button>
+            {session.status !== "loading" &&
+              <Button
+                className="font-sans" variant="ghost"
+                onClick={() => {
+                  if (session.status === "authenticated") signOut();
+                  else router.push("/login");
+                }}
+              >
+                {session.status === "authenticated" ? "Logout" : "Login"}
+              </Button>}
           </nav>
           <div className="flex items-center">
             <nav>
