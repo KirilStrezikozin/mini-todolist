@@ -19,6 +19,7 @@ export const TaskListStateSchema = z.object({
   tasks: z.array(TaskSchema),
   syncStatus: z.literal(["idle", "pulling", "pushing"]),
   syncScheduled: z.boolean(),
+  dirty: z.boolean(),
 });
 
 export type TaskListState = z.infer<typeof TaskListStateSchema>;

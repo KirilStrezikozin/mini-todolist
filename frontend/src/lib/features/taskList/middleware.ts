@@ -1,4 +1,4 @@
-import { Middleware } from "@reduxjs/toolkit";
+import { ActionCreatorWithPayload, Middleware } from "@reduxjs/toolkit";
 import { isActionType } from "@/lib/utils";
 import { setError } from "../error/slice";
 import { TaskSchema } from "./schema";
@@ -9,10 +9,15 @@ import {
   changeTaskName,
   changeTaskPriority,
   removeTask,
-  setTasks
+  setTasks,
+  taskListSlice
 } from "./slice";
 
 export const validationMiddleware: Middleware = store => next => action => {
+  if (!(action as ActionCreatorWithPayload<unknown>).type.startsWith(taskListSlice.name)) {
+    return next(action);
+  }
+
   if (isActionType(action, addTask)) {
     const res = TaskSchema.safeParse(action.payload);
     if (!res.success) {

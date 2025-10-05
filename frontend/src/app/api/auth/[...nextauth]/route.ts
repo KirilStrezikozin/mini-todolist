@@ -1,11 +1,12 @@
 import api from "@/lib/api/axios";
+import { AxiosError } from "axios";
 import NextAuth from "next-auth";
 import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 
 function getAccessTokenExpiryDate() {
-  const delta = Number(process.env.ACCESS_TOKEN_EXPIRE_MINUTES) || 15 * 60;
+  const delta = (Number(process.env.ACCESS_TOKEN_EXPIRE_MINUTES) || 15) * 60;
   const now = Math.floor(Date.now() / 1000);
   return now + delta;
 }
@@ -15,8 +16,9 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     const { data } = await api({
       method: "post",
       url: "auth/refresh",
+      headers: { "Content-Type": "application/json" },
       data: {
-        refreshToken: token.refreshToken,
+        refresh_token: token.refreshToken,
       },
     });
 
@@ -27,7 +29,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       accessTokenExpiresAt: getAccessTokenExpiryDate(),
     };
   } catch (err) {
-    console.error("Error refreshing token:", err);
+    console.error("Error refreshing token:", (err as AxiosError).response);
     return { ...token };
   }
 }

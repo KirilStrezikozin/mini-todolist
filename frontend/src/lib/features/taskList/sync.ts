@@ -4,7 +4,7 @@ import { AxiosResponse } from "axios";
 import { localStorageConfig } from "@/config/localStorage";
 import { AppThunk } from "@/lib/store";
 import { setError } from "../error/slice";
-import { selectIsSyncScheduled, selectSyncStatus, setIsSyncScheduled, setSyncStatus, setTaskList } from "./slice";
+import { selectIsSyncScheduled, selectSyncStatus, setIsSyncScheduled, setIsTaskListDirty, setSyncStatus, setTaskList } from "./slice";
 
 import {
   TaskListPublicDBSchema,
@@ -12,35 +12,39 @@ import {
   TaskListStateSchema,
   TaskListUpdateDB
 } from "./schema";
+import { getSession } from "next-auth/react";
 
 
 export const schedulePutTaskListDB = (): AppThunk => {
   return (dispatch, getState) => {
-    if (selectIsSyncScheduled(getState())) return; /* Allow a single scheduled sync in flight. */
+    getSession().then(session => {
+      if (!session?.user) return; /* Skip synchronization if not logged in. */
 
-    dispatch(setIsSyncScheduled(true));
+      if (selectIsSyncScheduled(getState())) return; /* Allow a single scheduled sync in flight. */
+      dispatch(setIsSyncScheduled(true));
 
-    const delay = (Number(process.env.TASKLIST_SYNC_FREQUENCY_SECONDS) || 10) * 1000;
-    const sync = () => {
-      const state = getState();
+      const delay = (Number(process.env.TASKLIST_SYNC_FREQUENCY_SECONDS) || 10) * 1000;
+      const sync = () => {
+        const state = getState();
 
-      const syncStatus = selectSyncStatus(state);
-      if (syncStatus !== "idle") {
-        /* Try again after delay if there is a sync operation currently in flight. */
-        setTimeout(sync, delay);
-        return;
+        const syncStatus = selectSyncStatus(state);
+        if (syncStatus !== "idle") {
+          /* Try again after delay if there is a sync operation currently in flight. */
+          setTimeout(sync, delay);
+          return;
+        }
+
+        dispatch(putTaskListDB({
+          title: state.taskList.title,
+          updated_at: state.taskList.updated_at,
+          tasks: state.taskList.tasks,
+        }));
+
+        dispatch(setIsSyncScheduled(false));
       }
 
-      dispatch(putTaskListDB({
-        title: state.taskList.title,
-        updated_at: state.taskList.updated_at,
-        tasks: state.taskList.tasks,
-      }));
-
-      dispatch(setIsSyncScheduled(false));
-    }
-
-    setTimeout(sync, delay);
+      setTimeout(sync, delay);
+    });
   };
 }
 
@@ -57,10 +61,10 @@ export const fetchTaskListDB = (): AppThunk => {
     };
 
     /* Assume that `api`'s interceptor will attach authorization headers. */
-    api({ method: "get", url: "tasklist" })
+    api({ method: "get", url: "tasklist/" })
       .then(({ data }) => {
         try {
-          const taskListDB = TaskListPublicDBSchema.parse(JSON.parse(data));
+          const taskListDB = TaskListPublicDBSchema.parse(data);
           const newState = TaskListStateSchema.decode({
             ...getState().taskList, /* Propagate unmodified props. */
             ...taskListDB,
@@ -68,6 +72,7 @@ export const fetchTaskListDB = (): AppThunk => {
           });
 
           dispatch(setTaskList(newState));
+          dispatch(saveLocalTaskListState(newState));
         } catch (error) {
           /* Parsing error. */
           console.log(error);
@@ -91,10 +96,10 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
     };
 
     /* Assume that `api`'s interceptor will attach authorization headers. */
-    api({ method: "put", url: "tasklist", data: data })
+    api({ method: "put", url: "tasklist/", data: data })
       .then(({ data }) => {
         try {
-          const taskListDB = TaskListPublicDBSchema.parse(JSON.parse(data));
+          const taskListDB = TaskListPublicDBSchema.parse(data);
           const newState = TaskListStateSchema.decode({
             ...getState().taskList, /* Propagate unmodified props. */
             ...taskListDB, /* Response data has the new updated_at value. */
@@ -109,6 +114,8 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
         }
       })
       .catch((error) => {
+        console.error(error);
+
         if (!error.response) {
           reject();
           return;
@@ -149,6 +156,7 @@ export const saveLocalTaskListState = (state?: TaskListState): AppThunk => {
     try {
       state = state ? state : getState().taskList;
       localStorage.setItem(localStorageConfig.taskListKey, JSON.stringify(state));
+      dispatch(setIsTaskListDirty(false));
     } catch (err) {
       console.error(err);
       dispatch(setError("Failed to save offline task list"));

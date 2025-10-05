@@ -1,15 +1,17 @@
 "use client"
 
-import { StrictMode, useEffect, useMemo, useRef } from "react";
+import { StrictMode, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 
 import { taskListConfig } from "@/config/taskList";
 
 import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, getNextTaskKey, selectTaskList, selectTasks, taskListSlice } from "@/lib/features/taskList/slice";
+import { addTask, getNextTaskKey, selectIsTaskListDirty, selectTaskList, selectTasks, setIsSyncScheduled, setIsTaskListDirty, setSyncStatus, taskListSlice } from "@/lib/features/taskList/slice";
 import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
 import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState, schedulePutTaskListDB } from "@/lib/features/taskList/sync";
+import { selectErrorMessage } from "@/lib/features/error/slice";
 import { selectLastActionType } from "@/lib/store";
 
 import { Task } from "./task";
@@ -25,9 +27,18 @@ export function TaskList() {
   useEffect(() => {
     /* Load persisted task list state on mount. */
     store.dispatch(loadLocalTaskListState());
-    store.subscribe(() => {
-      dispatch(saveLocalTaskListState());
-      dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
+    store.dispatch(setIsSyncScheduled(false));
+    store.dispatch(setSyncStatus("idle"));
+
+    const saveAndScheduleSync = () => {
+      store.dispatch(saveLocalTaskListState());
+      store.dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
+    }
+
+    saveAndScheduleSync();
+    return store.subscribe(() => {
+      if (!selectIsTaskListDirty(store.getState())) return;
+      saveAndScheduleSync();
     });
   }, []);
 
@@ -43,6 +54,12 @@ export function TaskList() {
 
   const lastTaskRef = useRef<HTMLDivElement>(null);
 
+  const errorMessage = useAppSelector(selectErrorMessage);
+
+  useEffect(() => {
+    toast.error(errorMessage);
+  }, [errorMessage]);
+
   useEffect(() => {
     /* Sync task list with DB when logged-in. */
     if (session.status === "authenticated") {
@@ -57,12 +74,16 @@ export function TaskList() {
     }
   }, [session])
 
+  const [focusLast, setFocusLast] = useState(false);
+
   useEffect(() => {
+    if (!focusLast) return;
+    setFocusLast(false);
+
     /* Focus the text area of the last task once a new one has been added. */
-    if (lastActionType !== taskListSlice.actions.addTask.type) return;
     interface Focusable extends HTMLElement { focus: () => void }
     (lastTaskRef.current?.lastChild as Focusable).focus();
-  }, [lastActionType])
+  }, [focusLast])
 
   const tasksComponent = useMemo(() => {
     let sortedTasks = tasks;
@@ -112,6 +133,8 @@ export function TaskList() {
                   /* Guarantee a unique key for each new task element. */
                   key: getNextTaskKey(tasks),
                 }));
+
+                setFocusLast(true);
               }}
             >
               <Plus /> Add
