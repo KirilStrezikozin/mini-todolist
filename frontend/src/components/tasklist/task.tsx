@@ -40,7 +40,7 @@ export function Task({ index, data, inputRef }: TaskProps) {
           </div>
           <TextInput
             inputRef={ref}
-            onFocus={_ => setShow(true)}
+            onFocus={() => setShow(true)}
             onBlur={e => {
               /* Skip updating state in store on no changes to the task name. */
               if (data.name !== e.target.value || !e.target.value) {

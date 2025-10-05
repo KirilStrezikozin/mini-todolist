@@ -8,8 +8,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function isActionType<
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   T extends ActionCreatorWithPayload<any>
 >(action: unknown, reducer: T): action is ReturnType<T> {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   return typeof action === "object" && action != null && (action as any).type === reducer.type;
 }
 

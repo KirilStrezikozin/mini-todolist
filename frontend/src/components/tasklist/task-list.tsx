@@ -8,7 +8,7 @@ import { taskListConfig } from "@/config/taskList";
 
 import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, getNextTaskKey, selectIsTaskListDirty, selectTaskList, selectTasks, setIsSyncScheduled, setSyncStatus } from "@/lib/features/taskList/slice";
+import { addTask, getNextTaskKey, selectIsTaskListDirty, selectTasks, setIsSyncScheduled, setSyncStatus } from "@/lib/features/taskList/slice";
 import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
 import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState, schedulePutTaskListDB } from "@/lib/features/taskList/sync";
 import { selectErrorMessage } from "@/lib/features/error/slice";
@@ -35,11 +35,10 @@ export function TaskList() {
       store.dispatch(saveLocalTaskListState());
       store.dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
     });
-  }, []);
+  }, [store]);
 
   const dispatch = useAppDispatch();
 
-  const taskList = useAppSelector(selectTaskList);
   const tasks = useAppSelector(selectTasks);
 
   const searchFilter = useAppSelector(selectSearchFilter);
@@ -57,6 +56,8 @@ export function TaskList() {
   useEffect(() => {
     /* Sync task list with DB when logged-in. */
     if (session.status === "authenticated") {
+      const taskList = store.getState().taskList;
+
       /* This action will try pushing local task list state to DB first.
        * In case the local state is outdated, the action will fetch the state
        * from DB and load it. */
@@ -66,7 +67,7 @@ export function TaskList() {
         tasks: taskList.tasks,
       }));
     }
-  }, [session])
+  }, [session, dispatch, store])
 
   const [focusLast, setFocusLast] = useState(false);
 
@@ -121,7 +122,7 @@ export function TaskList() {
             <Button
               variant="outline"
               className="opacity-50 shadow-none border-none bg-transparent dark:bg-transparent h-7 w-full text-muted-foreground hover:opacity-100 text-sm w-full"
-              onClick={_ => {
+              onClick={() => {
                 dispatch(addTask({
                   ...taskListConfig.defaultTask,
                   /* Guarantee a unique key for each new task element. */

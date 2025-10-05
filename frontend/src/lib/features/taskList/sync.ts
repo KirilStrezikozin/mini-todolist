@@ -89,7 +89,7 @@ export const fetchTaskListDB = (): AppThunk => {
 }
 
 export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const syncStatus = selectSyncStatus(getState());
     if (syncStatus !== "idle") return;
 
@@ -100,10 +100,10 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
       dispatch(setSyncStatus("idle"));
     };
 
-    const rejectLogout = () => {
+    const rejectLogout = async () => {
       dispatch(setError("Please relogin"));
       dispatch(setSyncStatus("idle"));
-      signOut();
+      await signOut();
     };
 
     /* Assume that `api`'s interceptor will attach authorization headers. */
@@ -124,7 +124,7 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
           reject();
         }
       })
-      .catch((error) => {
+      .catch(async (error) => {
         if (!error.response) {
           reject();
           return;
@@ -132,7 +132,7 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
 
         const resp = (error.response as AxiosResponse);
         if (resp.status === 401) {
-          rejectLogout();
+          await rejectLogout();
           return;
         } else if (resp.status !== 409) {
           reject();

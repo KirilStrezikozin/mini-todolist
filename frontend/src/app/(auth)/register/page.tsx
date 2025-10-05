@@ -29,6 +29,8 @@ export default function Page() {
       });
 
       if (res?.error) throw new Error(res.error);
+
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
     } catch (error) {
       toast.error("Email already registered");
       return;

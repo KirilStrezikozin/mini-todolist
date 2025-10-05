@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 import * as z from "zod";
-import { AxiosError, AxiosResponse } from "axios";
-import api from "@/lib/api/axios";
 
 export const AuthFormSchema = z.object({
   email: z.email({ message: "Invalid email address" }),
