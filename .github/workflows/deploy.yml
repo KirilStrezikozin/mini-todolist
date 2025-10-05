@@ -1,0 +1,70 @@
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push backend image
+        run: |
+          IMAGE_NAME=$(echo "${GITHUB_REPOSITORY}/backend" | tr '[:upper:]' '[:lower:]')
+          echo "Image name: $IMAGE_NAME"
+
+          docker build -t ${{ env.REGISTRY }}/$IMAGE_NAME:latest ./backend
+          docker tag ${{ env.REGISTRY }}/$IMAGE_NAME:latest ${{ env.REGISTRY }}/$IMAGE_NAME:${GITHUB_SHA}
+
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+          docker push ${{ env.REGISTRY }}/$IMAGE_NAME:latest
+          docker push ${{ env.REGISTRY }}/$IMAGE_NAME:${GITHUB_SHA}
+
+      - name: Deploy on DO droplet
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "Pulling source code..."
+            rm -rf ~/app && mkdir -p ~/app && cd ~/app
+            git clone https://github.com/${{ github.repository }} --depth 1 .
+
+            echo "Dumping .env file..."
+            echo "PROJECT_NAME=${{ github.event.repository.name }}" >> .env
+            echo "PROJECT_SCHEMA_NAME=${{ github.event.repository.name }}" >> .env
+            echo "POSTGRES_SERVER=${{ secrets.POSTGRES_PORT }}" >> .env
+            echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
+            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "CLOUDFLARE_TUNNEL_TOKEN=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}" >> .env
+
+            echo "Logging into ${{ env.REGISTRY }}..."
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+            echo "Pulling the latest image..."
+            docker-compose pull backend
+
+            echo "Starting containers..."
+            docker-compose up -d
+
+            echo "Cleaning up..."
+            docker image prune -af || true
