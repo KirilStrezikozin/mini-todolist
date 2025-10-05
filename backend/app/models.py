@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 
 from pydantic import EmailStr
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column, JSON, text
 
 
 # Shared properties
@@ -35,8 +35,8 @@ class UserPublic(UserBase):
 # Shared properties
 class TaskListBase(SQLModel):
     title: str = Field(default="", nullable=False)
-    tasks: dict = Field(
-        sa_column=Column(JSON, nullable=False, default={})
+    tasks: list[dict] = Field(
+        sa_column=Column(JSON, nullable=False, default=[], server_default=text("'[]'::json"))
     )
 
 
