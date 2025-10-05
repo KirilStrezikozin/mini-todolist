@@ -20,6 +20,8 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT?Variable not set}
     volumes:
       - db-data:/var/lib/postgresql/data
+    # networks:
+    #   - mini_todolist
 
   backend:
     build:
@@ -34,6 +36,23 @@ services:
       - POSTGRES_SERVER=db
     ports:
       - "8000:8000"
+    # networks:
+    #   - mini_todolist
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.2.0
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - .env
+    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    # networks:
+    #   - mini_todolist
 
 volumes:
   db-data:
+
+# networks:
+#   mini_todolist:
+#     driver: bridge
