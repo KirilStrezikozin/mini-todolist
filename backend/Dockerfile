@@ -21,4 +21,4 @@ COPY ./alembic.ini ./app /app
 
 EXPOSE 8000
 
-CMD ["fastapi", "run", "--workers", "4", "/app/main.py"]
+CMD ["fastapi", "run", "--workers", "1", "/app/main.py"]
