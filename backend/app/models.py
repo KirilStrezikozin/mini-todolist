@@ -35,7 +35,7 @@ class UserPublic(UserBase):
 # Shared properties
 class TaskListBase(SQLModel):
     title: str = Field(default="", nullable=False)
-    tasks_json: dict = Field(
+    tasks: dict = Field(
         sa_column=Column(JSON, nullable=False, default={})
     )
 
