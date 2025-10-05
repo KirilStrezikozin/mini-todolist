@@ -128,21 +128,30 @@ export const putTaskListDB = (data: TaskListUpdateDB): AppThunk => {
   };
 }
 
-export const loadLocalTaskListState = (): TaskListState | undefined => {
-  try {
-    const state = localStorage.getItem(localStorageConfig.taskListKey);
-    if (!state) return undefined;
-    return TaskListStateSchema.parse(JSON.parse(state));
-  } catch (err) {
-    console.error(err);
-    return undefined;
-  }
+export const loadLocalTaskListState = (): AppThunk => {
+  return dispatch => {
+    try {
+      const state = localStorage.getItem(localStorageConfig.taskListKey);
+      if (!state) return;
+
+      const newState = TaskListStateSchema.parse(JSON.parse(state));
+      dispatch(setTaskList(newState));
+
+    } catch (err) {
+      console.error(err);
+      dispatch(setError("Failed to load offline task list"));
+    }
+  };
 }
 
-export const saveLocalTaskListState = (state: TaskListState | undefined) => {
-  try {
-    localStorage.setItem(localStorageConfig.taskListKey, JSON.stringify(state));
-  } catch (err) {
-    console.error(err);
-  }
+export const saveLocalTaskListState = (state?: TaskListState): AppThunk => {
+  return (dispatch, getState) => {
+    try {
+      state = state ? state : getState().taskList;
+      localStorage.setItem(localStorageConfig.taskListKey, JSON.stringify(state));
+    } catch (err) {
+      console.error(err);
+      dispatch(setError("Failed to save offline task list"));
+    }
+  };
 }

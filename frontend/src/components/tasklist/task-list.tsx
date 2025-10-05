@@ -7,7 +7,7 @@ import { taskListConfig } from "@/config/taskList";
 
 import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, getNextTaskKey, selectTaskList, selectTasks, setTaskList, taskListSlice } from "@/lib/features/taskList/slice";
+import { addTask, getNextTaskKey, selectTaskList, selectTasks, taskListSlice } from "@/lib/features/taskList/slice";
 import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
 import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState, schedulePutTaskListDB } from "@/lib/features/taskList/sync";
 import { selectLastActionType } from "@/lib/store";
@@ -24,9 +24,9 @@ export function TaskList() {
 
   useEffect(() => {
     /* Load persisted task list state on mount. */
-    store.dispatch(setTaskList(loadLocalTaskListState()));
+    store.dispatch(loadLocalTaskListState());
     store.subscribe(() => {
-      saveLocalTaskListState(store.getState().taskList);
+      dispatch(saveLocalTaskListState());
       dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
     });
   }, []);
