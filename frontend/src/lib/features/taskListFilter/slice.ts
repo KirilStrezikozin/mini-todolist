@@ -1,3 +1,4 @@
+import { RootState } from "@/lib/store";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface TaskListFilterState {
@@ -27,6 +28,10 @@ export const taskListFilterSlice = createSlice({
     },
   },
 });
+
+export const selectSearchFilter = (state: RootState) => state.taskListFilter.search;
+export const selectCompletionFilter = (state: RootState) => state.taskListFilter.completion;
+export const selectPriorityFilter = (state: RootState) => state.taskListFilter.priority;
 
 export const {
   setSearchFilter,

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { setCompletionFilter, setPriorityFilter } from "@/lib/features/taskListFilter/slice";
+import { selectCompletionFilter, selectPriorityFilter, setCompletionFilter, setPriorityFilter } from "@/lib/features/taskListFilter/slice";
 
 interface TaskListOptions {
   showSearch?: CheckedState,
@@ -26,8 +26,8 @@ interface TaskListOptions {
 export function TaskListOptions({ showSearch, setShowSearch }: TaskListOptions) {
   const dispatch = useAppDispatch();
 
-  const completionFilter = useAppSelector(state => state.taskListFilter.completion);
-  const priorityFilter = useAppSelector(state => state.taskListFilter.priority);
+  const completionFilter = useAppSelector(selectCompletionFilter);
+  const priorityFilter = useAppSelector(selectPriorityFilter);
 
   return (
     <DropdownMenu>

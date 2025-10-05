@@ -7,6 +7,7 @@ import { taskListConfig } from "@/config/taskList";
 
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
 import { addTask, getNextTaskKey, load, saveTaskListState, taskListSlice } from "@/lib/features/taskList/slice";
+import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
 import { selectLastActionType } from "@/lib/store";
 
 import { Task } from "./task";
@@ -30,9 +31,9 @@ export function TaskList() {
   const tasks = useAppSelector(state => state.taskList.tasks);
   const lastActionType = useAppSelector(selectLastActionType);
 
-  const searchFilter = useAppSelector(state => state.taskListFilter.search);
-  const completionFilter = useAppSelector(state => state.taskListFilter.completion);
-  const priorityFilter = useAppSelector(state => state.taskListFilter.priority);
+  const searchFilter = useAppSelector(selectSearchFilter);
+  const completionFilter = useAppSelector(selectCompletionFilter);
+  const priorityFilter = useAppSelector(selectPriorityFilter);
 
   const lastTaskRef = useRef<HTMLDivElement>(null);
 

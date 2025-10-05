@@ -100,6 +100,9 @@ export const getNextTaskKey = (tasks: TaskListState["tasks"]): Task["key"] => {
   return nextKey + 1;
 }
 
+export const selectTasks = (state: RootState) => state.taskList.tasks;
+export const selectTitle = (state: RootState) => state.taskList.title;
+
 export const {
   load,
   addTask,

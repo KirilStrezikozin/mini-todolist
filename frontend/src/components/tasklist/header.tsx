@@ -5,8 +5,8 @@ import { useRef, useState } from "react";
 import { taskListConfig } from "@/config/taskList";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { changeTitle } from "@/lib/features/taskList/slice";
-import { setSearchFilter } from "@/lib/features/taskListFilter/slice";
+import { changeTitle, selectTitle } from "@/lib/features/taskList/slice";
+import { selectSearchFilter, setSearchFilter } from "@/lib/features/taskListFilter/slice";
 
 import { TextInput } from "../text-input";
 import { TaskListOptions } from "./options";
@@ -20,8 +20,8 @@ type Checked = DropdownMenuCheckboxItemProps["checked"];
 export function TaskListHeader() {
   const dispatch = useAppDispatch();
 
-  const title = useAppSelector(state => state.taskList.title);
-  const searchFilter = useAppSelector(state => state.taskListFilter.search);
+  const title = useAppSelector(selectTitle);
+  const searchFilter = useAppSelector(selectSearchFilter);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const [showSearch, setShowSearch] = useState<Checked>(false);
