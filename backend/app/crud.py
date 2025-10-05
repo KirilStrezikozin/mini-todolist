@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from typing import Union
 
@@ -53,21 +54,25 @@ def get_or_create_tasklist(*, session: Session, user_id: uuid.UUID) -> TaskList:
 def update_tasklist_if_newer(
         *, session: Session, user_id: uuid.UUID, update_tasklist: TaskListUpdate
 ) -> [TaskList, Union['created', 'updated', 'ignored']]:
+    new_tasklist_data = TaskListUpdate.model_validate(update_tasklist)
+
     tasklist = get_tasklist_by_user(session=session, user_id=user_id)
     if not tasklist:
-        new_tasklist = TaskList.model_validate(update_tasklist)
+        new_tasklist = get_or_create_tasklist(session=session, user_id=user_id)
+        new_tasklist.title = new_tasklist_data.title;
+        new_tasklist.tasks = new_tasklist_data.tasks;
         session.add(new_tasklist)
         session.commit()
         session.refresh(new_tasklist)
         return (new_tasklist, 'created')
 
-    if update_tasklist.updated_at < tasklist.updated_at:
+    if new_tasklist_data.updated_at < tasklist.updated_at:
         # Client has an outdated task list, ignore.
         return (tasklist, 'ignored')
 
-    new_tasklist_data = TaskListUpdate.model_validate(update_tasklist)
-    tasklist.tasks_json = new_tasklist_data.tasks_json
-    tasklist.updated_at = new_tasklist_data.updated_at
+    tasklist.tasks = new_tasklist_data.tasks
+    tasklist.title = new_tasklist_data.title
+    tasklist.updated_at = datetime.utcnow()
     session.add(tasklist)
     session.commit()
     session.refresh(tasklist)
