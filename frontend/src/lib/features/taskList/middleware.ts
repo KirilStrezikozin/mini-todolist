@@ -1,4 +1,5 @@
-import { ActionCreatorWithPayload, Middleware } from "@reduxjs/toolkit";
+import { AppDispatch } from "@/lib/store";
+import { ActionCreatorWithPayload, Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
 import { isActionType } from "@/lib/utils";
 import { setError } from "../error/slice";
 import { TaskSchema } from "./schema";
@@ -13,7 +14,7 @@ import {
   taskListSlice
 } from "./slice";
 
-export const validationMiddleware: Middleware = store => next => action => {
+export const validationMiddleware: Middleware = (store: MiddlewareAPI<AppDispatch>) => next => action => {
   if (!(action as ActionCreatorWithPayload<unknown>).type.startsWith(taskListSlice.name)) {
     return next(action);
   }

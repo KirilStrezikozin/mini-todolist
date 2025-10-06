@@ -8,7 +8,7 @@ import { taskListConfig } from "@/config/taskList";
 
 import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/hooks/redux";
-import { addTask, getNextTaskKey, selectIsTaskListDirty, selectTasks, setIsSyncScheduled, setSyncStatus } from "@/lib/features/taskList/slice";
+import { addTask, getNextTaskKey, selectIsTaskListDirty, selectTasks, setIsSyncScheduled, setSyncStatus, taskListSlice } from "@/lib/features/taskList/slice";
 import { selectCompletionFilter, selectPriorityFilter, selectSearchFilter } from "@/lib/features/taskListFilter/slice";
 import { loadLocalTaskListState, putTaskListDB, saveLocalTaskListState, schedulePutTaskListDB } from "@/lib/features/taskList/sync";
 import { selectErrorMessage } from "@/lib/features/error/slice";
@@ -17,11 +17,14 @@ import { Task } from "./task";
 import { Collapse } from "../collapse";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
+import { selectLastActionType } from "@/lib/store";
 
 export function TaskList() {
   const session = useSession();
 
   const store = useAppStore();
+
+  const lastActionType = useAppSelector(selectLastActionType);
 
   useEffect(() => {
     /* Load persisted task list state on mount. */
@@ -32,6 +35,7 @@ export function TaskList() {
     return store.subscribe(() => {
       //console.log("subscribe");
       if (!selectIsTaskListDirty(store.getState())) return;
+      else if (!lastActionType?.startsWith(taskListSlice.name)) return;
       store.dispatch(saveLocalTaskListState());
       store.dispatch(schedulePutTaskListDB()); /* Periodically sync state to DB. */
     });

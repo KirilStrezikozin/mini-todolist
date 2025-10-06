@@ -4,7 +4,7 @@ import { AxiosResponse } from "axios";
 import { localStorageConfig } from "@/config/localStorage";
 import { AppThunk } from "@/lib/store";
 import { setError } from "../error/slice";
-import { selectIsSyncScheduled, selectSyncStatus, setIsSyncScheduled, setIsTaskListDirty, setSyncStatus, setTaskList } from "./slice";
+import { selectIsSyncScheduled, selectSyncStatus, selectTaskList, setIsSyncScheduled, setIsTaskListDirty, setSyncStatus, setTaskList } from "./slice";
 
 import {
   TaskListPublicDBSchema,
@@ -69,11 +69,16 @@ export const fetchTaskListDB = (): AppThunk => {
       .then(({ data }) => {
         try {
           const taskListDB = TaskListPublicDBSchema.parse(data);
-          const newState = TaskListStateSchema.decode({
-            ...getState().taskList, /* Propagate unmodified props. */
-            ...taskListDB,
+
+          const oldState = selectTaskList(getState());
+          const newState: TaskListState = {
+            title: taskListDB.title,
+            tasks: taskListDB.tasks,
+            updated_at: taskListDB.updated_at,
             syncStatus: "idle",
-          });
+            syncScheduled: oldState.syncScheduled,
+            dirty: false,
+          };
 
           //console.log("replace with", newState);
           dispatch(setTaskList(newState));
