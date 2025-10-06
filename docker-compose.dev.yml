@@ -41,6 +41,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:2025.2.0
+    container_name: ${PROJECT_NAME}_cloudflared
     restart: unless-stopped
     depends_on:
       - backend

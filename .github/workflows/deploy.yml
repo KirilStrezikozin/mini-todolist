@@ -60,11 +60,16 @@ jobs:
             echo "Logging into ${{ env.REGISTRY }}..."
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
+            docker stop "${{ github.event.repository.name }}_backend" || true
+            docker rm "${{ github.event.repository.name }}_backend" || true
+            docker stop "${{ github.event.repository.name }}_cloudflared" || true
+            docker rm "${{ github.event.repository.name }}_cloudflared" || true
+
             echo "Pulling the latest image..."
-            docker-compose -f docker-compose.prod.yml pull backend
+            docker compose -f docker-compose.prod.yml pull backend
 
             echo "Starting containers..."
-            docker-compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d
 
             echo "Cleaning up..."
             docker image prune -af || true
